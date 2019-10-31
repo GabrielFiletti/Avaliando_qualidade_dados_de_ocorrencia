@@ -94,7 +94,7 @@ class getBiodiversity():
     
     def removeStopWords(self, address):
         address = re.sub(STR_SPECIALCHAR, ' ', address).lower()
-        address = ' '.join([word for word in address.split(' ') if word not in self.STOP_WORDS])
+        address = ' '.join([word.strip(' ') for word in address.split(' ') if word.strip(' ') not in self.STOP_WORDS])
         return address
 
     def removeNonAscii(self, text):

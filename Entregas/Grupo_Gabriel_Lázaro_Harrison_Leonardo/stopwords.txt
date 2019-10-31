@@ -1,8 +1,19 @@
+microrregião
+região
+geografica
+estado
+cidade
+rua
+avenida
+loteamento
+cep
+-
 de
 a
 o
 que
 e
+
 é
 do
 da
@@ -14,7 +25,6 @@ não
 uma
 os
 no
-se
 na
 por
 mais

@@ -73,7 +73,7 @@ dfmap = biodiversity.df_location_sample[["lat","lon","ReportedAddress","Reversed
 dfmap["colorR"] = dfmap["Similarity"].apply(lambda x: float((100 - x) / 100 * 255) + 0.01)
 dfmap["colorG"] = dfmap["Similarity"].apply(lambda x: float(x / 100 * 255) + 0.01)
 dfmap["colorB"] = dfmap["Similarity"].apply(lambda x: 0.01)
-dfmap["radius"] = dfmap["Similarity"].apply(lambda x: int(x))
+dfmap["radius"] = dfmap["Similarity"].apply(lambda x: 1000 * x)
 
 try:
     rangelat = math.log2(170 / (dfmap['lat'].max()-dfmap['lat'].min()))
@@ -97,10 +97,11 @@ st.deck_gl_chart(
         'pickable': True,
         'autoHighlight': True,
         'stroked': True,
+        #'getRadius': 5000,
         #'filled': True,
-        #'radiusScale': 1,
-        'radiusMinPixels': 10, 
-        'radiusMaxPixels': 100,
+        'radiusScale': 1,
+        'radiusMinPixels': 5, 
+        'radiusMaxPixels': 50,
         'getLineColor': [220, 220, 220],
         'lineWidthMinPixels': 1,
         #'onHover': 'find documentation on how to implement this
