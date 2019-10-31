@@ -2,11 +2,18 @@
 import pandas as pd
 import numpy as np
 
+import textdistance
 import folium
+import string
+import os
+import re
 
 from statistics import mean 
 from opencage.geocoder import OpenCageGeocode
+from unidecode import unidecode
 
+# remove special characters and stopwords from addresses
+STR_SPECIALCHAR = "[({;:,<>_+=/.\"?!\t\r})]"
 
 class getBiodiversity():
 
@@ -69,6 +76,7 @@ class getBiodiversity():
             value = 0.0
         return value
     
+    """
     def checkGeoInfo(self, components, reported):
         aux = []
         unmatched = 0
@@ -82,12 +90,26 @@ class getBiodiversity():
         unmatched += 1 if not reported[1] in [aux[1], aux[2]] else 0
         unmatched += 1 if reported[2] != aux[3] else 0
         return unmatched
+    """
     
+    def removeStopWords(self, address):
+        address = re.sub(STR_SPECIALCHAR, ' ', address).lower()
+        address = ' '.join([word for word in address.split(' ') if word not in self.STOP_WORDS])
+        return address
+
+    def removeNonAscii(self, text):
+        return unidecode(str(text))
+
     def reverseGeocode(self, latlon):
         geo = self.geocoder.reverse_geocode(latlon[0], latlon[1], no_annotations = '1', pretty = '1', language='pt')
-        comp = geo[0]['components']
-        info = self.checkGeoInfo(comp, [latlon[2], latlon[3], latlon[4]])
-        return pd.Series((geo[0]['formatted'], info))
+        #comp = geo[0]['components']
+        #similarity = self.checkGeoInfo(comp, [latlon[2], latlon[3], latlon[4]])
+        reversed = self.removeStopWords(geo[0]['formatted'])
+        reported = self.removeStopWords(' '.join(latlon[2:6]))
+        reversed = self.removeNonAscii(reversed)
+        reported = self.removeNonAscii(reported)
+        similarity = 100 * textdistance.jaccard(reported , reversed) 
+        return pd.Series((reported, reversed, similarity))
     
     def setMapZoom(self, coords):
         try:
@@ -98,8 +120,9 @@ class getBiodiversity():
             zoom = 1
         return zoom
     
+    """
     def printMap(self):
-        coords = self.df_location_sample[["AdjustedLatitude", "AdjustedLongitude", "ReversedAddress", "Confidence"]].T.values.tolist()
+        coords = self.df_location_sample[["lat", "lon", "ReversedAddress", "Similarity"]].T.values.tolist()
         COLORS = ['green', 'lightgreen', 'orange', 'red']
         center = [mean(coords[0][:]), mean(coords[1][:])]
         zoom = self.setMapZoom(coords[0:2][:])
@@ -109,16 +132,23 @@ class getBiodiversity():
                           icon=folium.Icon(color=COLORS[coords[3][i]], icon='map-marker')).add_to(my_map) 
         self.observations_map = my_map
         return None
+    """
         
     def checkCoordinates(self, size):
-        self.df_filtered["AdjustedLatitude"] = self.df_data["Latitude"].apply(lambda x: self.parseFloat(x))
-        self.df_filtered["AdjustedLongitude"] = self.df_data["Longitude"].apply(lambda x: self.parseFloat(x))
+        try:
+            stopwords = open("stopwords.txt")
+            self.STOP_WORDS = [linha.rstrip(" ").rstrip("\n") for linha in stopwords.readlines()]
+        except:
+            self.STOP_WORDS = ["asdfasdfasdf"] # if stopwords file not found
+        self.STOP_WORDS = [sw.lower().strip() for sw in set(self.STOP_WORDS)]
+        self.df_filtered["lat"] = self.df_data["Latitude"].apply(lambda x: self.parseFloat(x))
+        self.df_filtered["lon"] = self.df_data["Longitude"].apply(lambda x: self.parseFloat(x))
         if len(self.df_filtered) < size:
             print("Not enough data to show. Please check your filter opetions")
             self.df_location_sample = pd.DataFrame()
             self.observations_map = None
             return None
         self.df_location_sample = self.df_filtered.sample(n=size).copy()
-        self.df_location_sample[['ReversedAddress','Confidence']] = self.df_location_sample[['AdjustedLatitude','AdjustedLongitude']+self.LOCATION_COORDINATES].apply(self.reverseGeocode, axis=1)
-        self.printMap()
+        self.df_location_sample[['ReportedAddress','ReversedAddress','Similarity']] = self.df_location_sample[['lat','lon']+self.LOCATION_COORDINATES].apply(self.reverseGeocode, axis=1)
+        #self.printMap()
         return None

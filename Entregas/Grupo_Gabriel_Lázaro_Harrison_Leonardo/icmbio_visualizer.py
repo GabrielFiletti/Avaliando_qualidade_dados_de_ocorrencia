@@ -1,10 +1,14 @@
-from package import icmbio_search as bio
+#from package import icmbio_search as bio
+import package.icmbio_search as bio
 
 import streamlit as st
 
 import pandas as pd
 import numpy as np 
-import math
+
+import textdistance
+import math 
+import os
 
 
 ####################################################################################
@@ -18,7 +22,8 @@ st.sidebar.header("Settings")
 key = '09aadb1b1d8840acacfa0fcece0acb13'
 key = st.sidebar.text_input("Product key", key)
 
-FILES = ["PortalBio 00002.csv",
+FILES = ["PortalBio 00043.csv",
+        "PortalBio 00002.csv",
         "PortalBio 00043.csv",
         "PortalBio 00555.csv",
         "PortalBio 03912.csv",
@@ -29,7 +34,7 @@ st.write("Reading file %s" % url)
 TAXONOMY_COLUMNS = ['Filo', 'Classe', 'Ordem', 'Familia', 'Genero', 'Especie']
 TAXONOMY_COLUMNS = st.sidebar.multiselect("Taxonomy columns to analyse", TAXONOMY_COLUMNS, TAXONOMY_COLUMNS)
 
-LOCATION_COLUMNS = ['Pais', 'Estado/Provincia', 'Municipio', 'Latitude', 'Longitude']
+LOCATION_COLUMNS = ['Pais', 'Estado/Provincia', 'Municipio', 'Localidade', 'Latitude', 'Longitude']
 LOCATION_COLUMNS = st.sidebar.multiselect("Location columns to analyse", LOCATION_COLUMNS, LOCATION_COLUMNS)
 
 LOCATION_SAMPLING = st.sidebar.slider("Number of samples to plot", 1, 20, 2)
@@ -59,61 +64,45 @@ if st.checkbox("Show filtered data (%d rows x %d columns)" % (biodiversity.df_fi
 
 # check if latitude and longitude are correct or not
 biodiversity.checkCoordinates(LOCATION_SAMPLING)
-biodiversity.df_location_sample = biodiversity.df_location_sample.rename(columns={'AdjustedLatitude': 'lat', 'AdjustedLongitude': 'lon'})
 if st.checkbox("Show locations sample data (%d rows x %d columns)" % (biodiversity.df_location_sample.shape[0],biodiversity.df_location_sample.shape[1])):
-    st.dataframe(biodiversity.df_location_sample[["lat", "lon", "Municipio", "ReversedAddress"]])
+    if len(biodiversity.STOP_WORDS) < 2: st.write("Please check if your stopwords.txt is in the project folder")
+    st.write(biodiversity.df_location_sample[["lat", "lon", "ReportedAddress", "ReversedAddress", "Similarity"]])
 
 # show map with sampled observations
+dfmap = biodiversity.df_location_sample[["lat","lon","ReportedAddress","ReversedAddress","Similarity"]].copy()
+dfmap["colorR"] = dfmap["Similarity"].apply(lambda x: float((100 - x) / 100 * 255) + 0.01)
+dfmap["colorG"] = dfmap["Similarity"].apply(lambda x: float(x / 100 * 255) + 0.01)
+dfmap["colorB"] = dfmap["Similarity"].apply(lambda x: 0.01)
+dfmap["radius"] = dfmap["Similarity"].apply(lambda x: int(x))
+st.write(dfmap) 
+
 try:
-    rangelat = math.log2(170 / (biodiversity.df_location_sample['lat'].max()-biodiversity.df_location_sample['lat'].min()))
-    rangelon = math.log2(360 / (biodiversity.df_location_sample['lon'].max()-biodiversity.df_location_sample['lon'].min()))
+    rangelat = math.log2(170 / (dfmap['lat'].max()-dfmap['lat'].min()))
+    rangelon = math.log2(360 / (dfmap['lon'].max()-dfmap['lon'].min()))
     zoom = int(min(rangelat, rangelon)) + 1
 except:
     zoom = 10
+
 st.deck_gl_chart(
     viewport={
-        'latitude': biodiversity.df_location_sample['lat'].mean(),
-        'longitude': biodiversity.df_location_sample['lon'].mean(),
-        'zoom': zoom,
-        'pitch': 0,
-        'bearing': 0,
+        'latitude': dfmap['lat'].median(),
+        'longitude': dfmap['lon'].median(),
+        'zoom': 11,
+        'pitch': 50,
+        'opacity': 0.1
     },
-    layers=[
-        {
-        'type': 'ScatterplotLayer', #'HexagonLayer', GridLayer, LineLayer, PointCloudLayer, TextLayer, ScreenGridLayer
-        'data': biodiversity.df_location_sample[biodiversity.df_location_sample['Confidence']<=1],
-        'getRadius': 1000, #'Radius', # inform a column name with values [0-100]
-        'getColor': [0, 120, 0], 
-        #'getColor': 'Color',
-        'getLineColor': [220, 220, 220],
-        'opacity': 1.0,
+    layers = [{
+        'type': 'ScatterplotLayer',
+        'data': dfmap,
+        'opacity': 0.9,
         'pickable': True,
         'autoHighlight': True,
         'stroked': True,
-        'filled': True,
-        'radiusScale': 1,
+        #'filled': True,
+        #'radiusScale': 1,
         'radiusMinPixels': 10, 
         'radiusMaxPixels': 100,
-        'lineWidthMinPixels': 2,
-        #'onHover': 'find documentation on how to implement this
-        },
-        {
-        'type': 'ScatterplotLayer', #'HexagonLayer', GridLayer, LineLayer, PointCloudLayer, TextLayer, ScreenGridLayer
-        'data': biodiversity.df_location_sample[biodiversity.df_location_sample['Confidence']>1],
-        'getRadius': 1000, #'Radius', # inform a column name with values [0-100]
-        'getColor': [120, 0, 0], 
-        #'getColor': 'Color',
         'getLineColor': [220, 220, 220],
-        'opacity': 1.0,
-        'pickable': True,
-        'autoHighlight': True,
-        'stroked': True,
-        'filled': True,
-        'radiusScale': 1,
-        'radiusMinPixels': 10,
-        'radiusMaxPixels': 100,
-        'lineWidthMinPixels': 2,
+        'lineWidthMinPixels': 1,
         #'onHover': 'find documentation on how to implement this
-        }
-        ])
-
+}])
