@@ -74,7 +74,6 @@ dfmap["colorR"] = dfmap["Similarity"].apply(lambda x: float((100 - x) / 100 * 25
 dfmap["colorG"] = dfmap["Similarity"].apply(lambda x: float(x / 100 * 255) + 0.01)
 dfmap["colorB"] = dfmap["Similarity"].apply(lambda x: 0.01)
 dfmap["radius"] = dfmap["Similarity"].apply(lambda x: int(x))
-st.write(dfmap) 
 
 try:
     rangelat = math.log2(170 / (dfmap['lat'].max()-dfmap['lat'].min()))
