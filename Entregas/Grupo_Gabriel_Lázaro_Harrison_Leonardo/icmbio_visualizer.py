@@ -37,8 +37,6 @@ TAXONOMY_COLUMNS = st.sidebar.multiselect("Taxonomy columns to analyse", TAXONOM
 LOCATION_COLUMNS = ['Pais', 'Estado/Provincia', 'Municipio', 'Localidade', 'Latitude', 'Longitude']
 LOCATION_COLUMNS = st.sidebar.multiselect("Location columns to analyse", LOCATION_COLUMNS, LOCATION_COLUMNS)
 
-LOCATION_SAMPLING = st.sidebar.slider("Number of samples to plot", 1, 20, 2)
-
 # class initializer
 biodiversity = bio.getBiodiversity(url, key, TAXONOMY_COLUMNS, LOCATION_COLUMNS)
 #if st.checkbox("Show raw data (%d rows x %d columns)" % (biodiversity.df_data.shape[0],biodiversity.df_data.shape[1])):
@@ -63,6 +61,7 @@ if st.checkbox("Show filtered data (%d rows x %d columns)" % (biodiversity.df_fi
     st.dataframe(biodiversity.df_filtered)
 
 # check if latitude and longitude are correct or not
+LOCATION_SAMPLING = st.sidebar.slider("Number of samples to plot", 1, biodiversity.df_filtered.shape[0], int(0.1*biodiversity.df_filtered.shape[0]+1))
 biodiversity.checkCoordinates(LOCATION_SAMPLING)
 if st.checkbox("Show locations sample data (%d rows x %d columns)" % (biodiversity.df_location_sample.shape[0],biodiversity.df_location_sample.shape[1])):
     if len(biodiversity.STOP_WORDS) < 2: st.write("Please check if your stopwords.txt is in the project folder")
@@ -73,7 +72,7 @@ dfmap = biodiversity.df_location_sample[["lat","lon","ReportedAddress","Reversed
 dfmap["colorR"] = dfmap["Similarity"].apply(lambda x: float((100 - x) / 100 * 255) + 0.01)
 dfmap["colorG"] = dfmap["Similarity"].apply(lambda x: float(x / 100 * 255) + 0.01)
 dfmap["colorB"] = dfmap["Similarity"].apply(lambda x: 0.01)
-dfmap["radius"] = dfmap["Similarity"].apply(lambda x: 1000 * x)
+dfmap["radius"] = dfmap["Similarity"].apply(lambda x: 1000 * x + 0.01)
 
 try:
     rangelat = math.log2(170 / (dfmap['lat'].max()-dfmap['lat'].min()))
@@ -86,7 +85,7 @@ st.deck_gl_chart(
     viewport={
         'latitude': dfmap['lat'].median(),
         'longitude': dfmap['lon'].median(),
-        'zoom': 11,
+        'zoom': zoom,
         'pitch': 50,
         'opacity': 0.1
     },
