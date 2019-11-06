@@ -92,9 +92,19 @@ class getBiodiversity():
         data = rg.search(aux)
         city = data[0]["name"]
         province = data[0]["admin1"] + " " + data[0]["admin2"]
+        dictionary = {'AC': 'Acre','AL': 'Alagoas','AP': 'Amapá','AM': 'Amazonas','BA': 'Bahia',
+         'CE': 'Ceará','DF': 'Distrito Federal','ES': 'Espírito Santo','GO': 'Goiás',
+         'MA': 'Maranhão','MT': 'Mato Grosso','MS': 'Mato Grosso do Sul',
+         'MG': 'Minas Gerais','PA': 'Pará','PB': 'Paraíba','PR': 'Paraná',
+         'PE': 'Pernambuco','PI': 'Piauí','RJ': 'Rio de Janeiro',
+         'RN': 'Rio Grande do Norte','RS': 'Rio Grande do Sul','RO': 'Rondônia',
+         'RR': 'Roraima','SC': 'Santa Catarina','SP': 'São Paulo','SE': 'Sergipe',
+         'TO': 'Tocantins'}
         country = data[0]["cc"].replace("BR","Brasil")
         reversed = city + " " + province + " " + country
-        reported = ' '.join(latlon[2:6])
+        for key in dictionary.keys():
+            latlon[3] = latlon[3].upper().replace(key, dictionary[key]) if len(latlon[3]) == 2 else latlon[3]
+        reported = ' '.join(latlon[2:5])
         reversed = self.removeStopWords(reversed)
         reported = self.removeStopWords(reported)
         reversed = self.removeNonAscii(reversed)

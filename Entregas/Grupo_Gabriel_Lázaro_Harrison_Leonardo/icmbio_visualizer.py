@@ -93,15 +93,15 @@ st.deck_gl_chart(
     layers = [{
         'type': 'ScatterplotLayer',
         'data': dfmap,
-        'opacity': 0.9,
+        'opacity': 0.5,
         'pickable': True,
         'autoHighlight': True,
         'stroked': True,
         #'getRadius': 5000,
         #'filled': True,
         'radiusScale': 1,
-        'radiusMinPixels': 5, 
-        'radiusMaxPixels': 50,
+        'radiusMinPixels': 3, 
+        'radiusMaxPixels': 30,
         'getLineColor': [220, 220, 220],
         'lineWidthMinPixels': 1,
         #'onHover': 'find documentation on how to implement this
