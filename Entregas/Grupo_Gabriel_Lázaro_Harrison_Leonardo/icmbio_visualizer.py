@@ -61,7 +61,8 @@ if st.checkbox("Show filtered data (%d rows x %d columns)" % (biodiversity.df_fi
     st.dataframe(biodiversity.df_filtered)
 
 # check if latitude and longitude are correct or not
-LOCATION_SAMPLING = st.sidebar.slider("Number of samples to plot", 1, biodiversity.df_filtered.shape[0], int(0.1*biodiversity.df_filtered.shape[0]+1))
+points_to_plot = int(0.1*biodiversity.df_filtered.shape[0]+1) if int(0.1*biodiversity.df_filtered.shape[0]+1) < 20 else 20
+LOCATION_SAMPLING = st.sidebar.slider("Number of samples to plot", 1, biodiversity.df_filtered.shape[0], points_to_plot)
 biodiversity.checkCoordinates(LOCATION_SAMPLING)
 if st.checkbox("Show locations sample data (%d rows x %d columns)" % (biodiversity.df_location_sample.shape[0],biodiversity.df_location_sample.shape[1])):
     if len(biodiversity.STOP_WORDS) < 2: st.write("Please check if your stopwords.txt is in the project folder")

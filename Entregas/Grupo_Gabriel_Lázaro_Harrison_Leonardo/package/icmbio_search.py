@@ -77,7 +77,7 @@ class getBiodiversity():
     
     def removeStopWords(self, address):
         address = re.sub(STR_SPECIALCHAR, ' ', address).lower()
-        address = ' '.join([word.strip(' ') for word in address.split(' ') if word.strip(' ') not in self.STOP_WORDS])
+        address = ' '.join(set([word.strip(' ') for word in address.split(' ') if word.strip(' ') not in self.STOP_WORDS]))
         return address
 
     def removeNonAscii(self, text):
@@ -91,7 +91,7 @@ class getBiodiversity():
         aux = (latlon[0], latlon[1])
         data = rg.search(aux)
         city = data[0]["name"]
-        province = data[0]["admin1"]
+        province = data[0]["admin1"] + " " + data[0]["admin2"]
         country = data[0]["cc"].replace("BR","Brasil")
         reversed = city + " " + province + " " + country
         reported = ' '.join(latlon[2:6])
@@ -99,7 +99,7 @@ class getBiodiversity():
         reported = self.removeStopWords(reported)
         reversed = self.removeNonAscii(reversed)
         reported = self.removeNonAscii(reported)
-        similarity = 100 * textdistance.jaccard(reported , reversed) 
+        similarity = 100 * textdistance.Cosine(qval=None).similarity(reported , reversed) 
         return pd.Series((reported, reversed, similarity))
     
     def setMapZoom(self, coords):
